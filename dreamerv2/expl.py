@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
 
-import agent
-import common
+from dreamerv2 import agent
+from dreamerv2 import common
 
 
 class Random(common.Module):
