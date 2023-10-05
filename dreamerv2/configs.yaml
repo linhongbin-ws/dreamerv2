@@ -20,7 +20,7 @@ defaults:
   train_every: 5
   train_steps: 1
   expl_until: 0
-  replay: {capacity: 2e6, ongoing: False, minlen: 50, maxlen: 50, prioritize_ends: True}
+  replay: {capacity: 2e6, ongoing: False, minlen: 50, maxlen: 50, prioritize_ends: True, free_ram_capacity: -1}
   dataset: {batch: 16, length: 50}
   log_keys_video: ['image']
   log_keys_sum: '^$'
@@ -77,6 +77,7 @@ defaults:
   disag_offset: 1
   disag_action_cond: True
   expl_model_loss: kl
+
 
 atari:
 

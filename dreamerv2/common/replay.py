@@ -12,7 +12,7 @@ class Replay:
 
   def __init__(
       self, directory, capacity=0, ongoing=False, minlen=1, maxlen=0,
-      prioritize_ends=False, free_ram_capacity=1000):
+      prioritize_ends=False, free_ram_capacity=-1):
     self._directory = pathlib.Path(directory).expanduser()
     self._directory.mkdir(parents=True, exist_ok=True)
     self._capacity = capacity
