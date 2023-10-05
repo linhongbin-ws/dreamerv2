@@ -6,13 +6,13 @@ import uuid
 
 import numpy as np
 import tensorflow as tf
-
+import random
 
 class Replay:
 
   def __init__(
       self, directory, capacity=0, ongoing=False, minlen=1, maxlen=0,
-      prioritize_ends=False):
+      prioritize_ends=False, free_ram_capacity=1000):
     self._directory = pathlib.Path(directory).expanduser()
     self._directory.mkdir(parents=True, exist_ok=True)
     self._capacity = capacity
@@ -22,13 +22,19 @@ class Replay:
     self._prioritize_ends = prioritize_ends
     self._random = np.random.RandomState()
     # filename -> key -> value_sequence
-    self._complete_eps = load_episodes(self._directory, capacity, minlen)
+    if free_ram_capacity>0:
+      self._complete_eps = load_episodes(self._directory, free_ram_capacity, minlen)
+    else:
+      self._complete_eps = load_episodes(self._directory, capacity, minlen)
+      
     # worker -> key -> value_sequence
     self._ongoing_eps = collections.defaultdict(
         lambda: collections.defaultdict(list))
     self._total_episodes, self._total_steps = count_episodes(directory)
     self._loaded_episodes = len(self._complete_eps)
     self._loaded_steps = sum(eplen(x) for x in self._complete_eps.values())
+
+    self._free_ram_capacity = free_ram_capacity
 
   @property
   def stats(self):
@@ -58,8 +64,11 @@ class Replay:
     self._loaded_episodes += 1
     episode = {key: convert(value) for key, value in episode.items()}
     filename = save_episode(self._directory, episode)
-    self._complete_eps[str(filename)] = episode
-    self._enforce_limit()
+    if self._free_ram_capacity >0:
+      self._complete_eps = load_episodes(self._directory, self._free_ram_capacity, self._minlen)
+    else:
+      self._complete_eps[str(filename)] = episode 
+      self._enforce_limit()
 
   def dataset(self, batch, length):
     example = next(iter(self._generate_chunks(length)))
@@ -147,10 +156,12 @@ def save_episode(directory, episode):
   return filename
 
 
-def load_episodes(directory, capacity=None, minlen=1):
+def load_episodes(directory, capacity=None, minlen=1, random=False):
   # The returned directory from filenames to episodes is guaranteed to be in
   # temporally sorted order.
   filenames = sorted(directory.glob('*.npz'))
+  if random:
+    random.shuffle(filenames)
   if capacity:
     num_steps = 0
     num_episodes = 0
