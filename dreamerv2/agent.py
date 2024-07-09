@@ -74,7 +74,7 @@ class Agent(common.Module):
     data = self.wm.preprocess(data)
     for key in self.wm.heads['decoder'].cnn_keys:
       name = key.replace('/', '_')
-      report[f'openl_{name}'] = self.wm.video_pred(data, key)
+      report[f'openl_{name}'] = self.wm.video_pred(data, key, self.config.report_start_pred_steps)
     return report
 
 
@@ -185,17 +185,17 @@ class WorldModel(common.Module):
     return obs
 
   @tf.function
-  def video_pred(self, data, key):
+  def video_pred(self, data, key, start_step=5):
     decoder = self.heads['decoder']
     truth = data[key][:6] + 0.5
     embed = self.encoder(data)
     states, _ = self.rssm.observe(
-        embed[:6, :5], data['action'][:6, :5], data['is_first'][:6, :5])
+        embed[:6, :start_step], data['action'][:6, :start_step], data['is_first'][:6, :start_step])
     recon = decoder(self.rssm.get_feat(states))[key].mode()[:6]
     init = {k: v[:, -1] for k, v in states.items()}
-    prior = self.rssm.imagine(data['action'][:6, 5:], init)
+    prior = self.rssm.imagine(data['action'][:6, start_step:], init)
     openl = decoder(self.rssm.get_feat(prior))[key].mode()
-    model = tf.concat([recon[:, :5] + 0.5, openl + 0.5], 1)
+    model = tf.concat([recon[:, :start_step] + 0.5, openl + 0.5], 1)
     error = (model - truth + 1) / 2
     video = tf.concat([truth, model, error], 2)
     B, T, H, W, C = video.shape
