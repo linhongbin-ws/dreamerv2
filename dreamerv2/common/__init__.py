@@ -17,3 +17,4 @@ from .dists import *
 from .nets import *
 
 from .oracle import OracleAgent
+from .sym import SymAgent
