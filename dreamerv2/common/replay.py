@@ -70,7 +70,7 @@ class Replay:
                           trans,
                           pivot,
                           set_theta_zero=False,
-                          set_trans_zero=False,
+                          set_trans_zero=True,
                           action_only=False,
                       )
                       _eps["image"].append(obs_new)
